@@ -12,11 +12,24 @@ int imgCutterBlade, imgCyberSword, imgDarkSword, imgDragonKeyring, imgFireSword,
 int imgPencil, imgPixelSword, imgRapier, imgScissors, imgScrewdriver, imgShinai, imgShovel, imgSpatula, imgToySword, imgUmbrella;
 
 int imgGround,imgTable, imgSky;
-int weaponAngle = 0;
-int weaponOut = 0;
+float weaponAngle = 0;
+float weaponOut = 0;
 int power;
 int rightSwordRange = 2;
 int leftSwordRange = 2;
+
+struct Weapon {
+	int img;	// 画像
+	int se;	// 動かしたときのSE
+
+	int level;	// 武器のレベル
+	int iniAngle;	// 初期weaponAngle +
+	int xPlus,yPlus;	// 初期x+,y+
+	int phase;	// 引き抜くのに必要な段階
+	int weight;	// 武器の重さ default:100
+	float size;	// 武器の大きさ default:15
+	int rangeR, rangeL;	// 振れる幅 default:100
+};
 
 int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow)
 {
@@ -32,13 +45,13 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	{
 		ClearDrawScreen();
 		DrawImageEnlarge(imgSky, WIDTH / 2, HEIGHT / 1.4, 30, 20);
-		DrawImageRotateEnlarge(imgSword, WIDTH/2, HEIGHT*1.5+(weaponOut/80.0f),15.0f,weaponAngle/10.0f);
+		DrawImageRotateEnlarge(imgPickaxe, WIDTH/2, HEIGHT*1.4+(weaponOut), 15.0f, weaponAngle);
 		DrawImageEnlarge(imgGround, WIDTH / 2, HEIGHT / 1.5, 30, 30);
 		//DrawImageEnlarge(imgTable, WIDTH / 2, HEIGHT / 1.3, 10, 10);
-		if (CheckHitKey(KEY_INPUT_RIGHT) == 1)weaponAngle++;
-		if (CheckHitKey(KEY_INPUT_LEFT) == 1)weaponAngle--;
-		if (CheckHitKey(KEY_INPUT_UP) == 1)weaponOut--;
-		if (CheckHitKey(KEY_INPUT_DOWN) == 1)weaponOut++;
+		if (CheckHitKey(KEY_INPUT_RIGHT) == 1)weaponAngle+=0.1f;
+		if (CheckHitKey(KEY_INPUT_LEFT) == 1)weaponAngle-=0.1f;
+		if (CheckHitKey(KEY_INPUT_UP) == 1)weaponOut+=0.1;
+		if (CheckHitKey(KEY_INPUT_DOWN) == 1)weaponOut-=0.1;
 
 		ScreenFlip();	// 裏画面の内容を表画面に反映させる
 		//WaitKey();
@@ -99,12 +112,12 @@ void DrawImageEnlarge(int img, int x, int y, int enlargeX, int enlargeY)
 	DrawExtendGraph(x - (w / 2) * enlargeX, y - (h / 2) * enlargeY, x + (w / 2) * enlargeX, y + (h / 2) * enlargeY, img, true);
 }
 
-// 角度、中心座標と大きさを指定して画像を表示する関数 ←こいつと格闘中！！
-void DrawImageRotateEnlarge(int img, int x, int y, double ExtRate,int angle)
+// 角度、中心座標と大きさを指定して画像を表示する関数
+void DrawImageRotateEnlarge(int img, int x, float y, double ExtRate,float angle)
 {
 	int w, h;
 	GetGraphSize(img, &w, &h);
-	DrawRotaGraph2(x - (w / 2),y - (h/ 2), w/2 , h-(weaponOut/20) ,ExtRate,(angle * DX_PI_F/180.0f), img, true);
+	DrawRotaGraph2F(x - (w / 2), y+(h/ 2), w/2 , h+(weaponOut), ExtRate, (angle * DX_PI_F / 180.0f), img, true);
 }
 
 int LoadGraphWithCheck(const char* file)
