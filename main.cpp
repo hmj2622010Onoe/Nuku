@@ -35,7 +35,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	SetWindowText("ゲーム");	// ウィンドウのタイトル
 	SetGraphMode(WIDTH, HEIGHT, 32);	// ウィンドウの大きさとカラービット数の指定
 	ChangeWindowMode(true);	// ウィンドウモードで起動
-	if (DxLib_Init() == -1)return -1;	// ライブラリ初期化　エラーが起きたら終了
+	if (DxLib_Init() == -1)return -1;	// ライブラリ初期化　エラーが起きたら終了0
 	SetDrawScreen(DX_SCREEN_BACK);	// 描画面を裏画面にする
 
 	InitGame();
@@ -175,7 +175,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 			}
 		}
 
-		if (upKeyCheck == -1)weaponOut -= (1 - (leftSwordRange - (weapon.rangeL + weaponOut / 2))) / 10 + (1 - (rightSwordRange - (weapon.rangeR + weaponOut / 2))) / 5;
+		if (upKeyCheck == -1)weaponOut -= (1 - (leftSwordRange - (weapon.rangeL + weaponOut / 2))) / 10 + (1 - (rightSwordRange - (weapon.rangeR + weaponOut / 2))) / weapon.weight;
 
 		/*if (weaponOut > 40) {
 			outCount = 50;
