@@ -3,6 +3,7 @@
 void InitGame(void);
 void DrawImageEnlarge(int img, int x, int y, int enlargeX, int enlargeY);
 void DrawImageRotateEnlarge(int img, int x, float y,double ExtRate,float Angle);
+void DrawImageAnimation(int img, int x, float y, double ExtRate, int style);
 
 struct Weapon {
 	int img;	// ‰æ‘œ
