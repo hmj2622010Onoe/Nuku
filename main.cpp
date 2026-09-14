@@ -11,13 +11,18 @@ const int PLAYER_POWER_MAX = 100;
 
 int mainX = (WIDTH / 10) * 7;	// 武器収集エリアにおいての中心X座標
 
+int attackX = (WIDTH / 10) * 2;	// 攻撃エリアにおいての中心X座標
+
 // 武器の種類(全部使うかは不明)
 int imgSword, imgScythe, imgSpear, imgAxe, imgKatana, imgMightyHammer,imgPickaxe,imgArrow,imgBayonet,imgChainsaw;
 int imgCutterBlade, imgCyberSword, imgDarkSword, imgDragonKeyring, imgFireSword, imgKey, imgKitchenKnife, imgLaserSaber, imgMagicHand, imgNaginata;
 int imgPencil, imgPixelSword, imgRapier, imgScissors, imgScrewdriver, imgShinai, imgShovel, imgSpatula, imgToySword, imgUmbrella;
 int imgCutterKnife, imgWindmill, imgTheLegendary,imgMagicStaff;
 
-int imgGround,imgTable, imgSky,imgField,imgFieldUI,imgFieldCover;
+int imgGround,imgTable, imgSky,imgLight,imgField,imgFieldUI,imgFieldCover;
+
+int imgEne, imgEneK, imgEneKGreen, imgEneKYellow,imgEneKRed;
+
 float weaponAngle = 0;	// 武器の角度
 float weaponOut = 0;	// 武器の高さ（Y座標）
 int power;
@@ -49,8 +54,11 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	while(1)
 	{
 		ClearDrawScreen();
+		//SetDrawBlendMode(DX_BLENDMODE_ADD, 255-(weaponOut/winningLine)* 255);	// ブレンドモード設定
+		
 		DrawImageEnlarge(imgSky, mainX, HEIGHT / 2, 40, 30);	// 空を描く
-		DrawImageEnlarge(imgGround, mainX, HEIGHT / 2, 33, 28);	// 地面を描く　武器より後面
+
+		DrawImageEnlarge(imgGround, mainX, HEIGHT / 2.1f, 33, 28);	// 地面を描く　武器より後面
 		//Weapon weapon;
 		//Weapon weapon = {imgSword,1,0,0,15,15.0f,3,3};
 		// 武器を描く
@@ -68,27 +76,33 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 			if(24<weaponAngle)pixelStyle = 10;
 
 			pixelOut = static_cast<int>(std::round(weaponOut / 2));	// 概ねドット状に上下させるため整数に変換
-			if (weaponOut - 0.5 > winningLine)	// ドット状に下がるための専用の処理
-			{
-				if(outCount%20<10)weaponOut -= 0.4;	
-			}
+			//if (weaponOut - 0.5 > winningLine)	// ドット状に下がるための専用の処理
+			//{
+			//	if(outCount%20<10)weaponOut -= 0.4;	
+			//}
 			// ドット専用の描画用　角度を使わない
 			DrawImageAnimation(weapon.img, mainX + weapon.xPlus, (HEIGHT * 1.4f + pixelOut*2) - weapon.yPlus, weapon.size, pixelStyle);
 		}
 		// 通常時の描画用
 		else DrawImageRotateEnlarge(weapon.img, mainX + weapon.xPlus, (HEIGHT * 1.4f + weaponOut)-weapon.yPlus, weapon.size, weaponAngle+weapon.iniAngle);
-		DrawImageEnlarge(imgGround, mainX, HEIGHT / 2, 40, 30);	// 地面を描く　武器より前面
-		DrawImageEnlarge(imgField, mainX-100, HEIGHT / 2, 30, 40);
-		DrawImageEnlarge(imgFieldCover, mainX-100, HEIGHT / 2, 30, 30);
-		DrawImageEnlarge(imgFieldUI, mainX-100, HEIGHT / 2, 30, 30);
+		DrawImageEnlarge(imgGround, mainX, HEIGHT / 2.1f, 40, 30);	// 地面を描く　武器より前面
+
+		//SetDrawBlendMode(DX_BLENDMODE_ALPHA, ((weaponOut / winningLine) * 100));	// ブレンドモード設定
+		//DrawImageEnlarge(imgLight, mainX, HEIGHT / 1.2, 20, 25);	// 光を描く　
+		SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);	// ブレンドモードを元に戻す
+
+		DrawImageEnlarge(imgField, mainX-100, HEIGHT / 2, 29, 40);
+		DrawImageEnlarge(imgFieldCover, mainX-100, HEIGHT / 2, 29, 30);
+		DrawImageEnlarge(imgFieldUI, mainX-100, HEIGHT / 2, 29, 30);
+		DrawImageEnlarge(imgEneK, attackX+22, HEIGHT / 8, 8, 8);
 		
 		GetGraphSize(weapon.img, &w, &h);	// 現在の武器の大きさを取得
 		winningLine = (h / 10) * weapon.phase;
 		//DrawImageEnlarge(imgTable, WIDTH / 2, HEIGHT / 1.3, 10, 10);
 		
-		if (weaponOut - 0.5 > winningLine)	// 既定のラインより上であれば上昇を抑える
+		while (weaponOut - 0.5 > winningLine && endRound == false)	// 既定のラインより上であれば上昇を抑える
 		{
-			weaponOut -= 0.3f;
+			weaponOut -= 0.5f;
 		}
 		if (outCount == 0) {
 			if (CheckHitKey(KEY_INPUT_RIGHT) == 1) {	// 横矢印キーが押されたらそちらに傾かせる
@@ -115,7 +129,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 
 		if (upKeyCheck == 1&&endRound==false)	// 上矢印キーが押された瞬間にまだ引き抜いていなければ
 		{
-			if (weaponOut > winningLine && -5 < weaponAngle && weaponAngle < 5&&endRound==false)	// 十分上に引っ張られているかつ真ん中にある状態の場合、引き抜く
+			if (weaponOut > winningLine && -10 < weaponAngle && weaponAngle < 10&&endRound==false)	// 十分上に引っ張られているかつ真ん中にある状態の場合、引き抜く
 			{
 				endRound = true;
 				weaponAngle = 0;	// 角度を真上に
@@ -136,9 +150,9 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 			}
 		}
 
-		if (outCount > 50) {	// 50回以上上昇する場合(つまり引き抜いた時)は少しずつ上げる
-			if (weapon.img == imgPixelSword&&outCount % 20 > 9)weaponOut += 0.4;
-			else weaponOut += 0.05f;
+		if (outCount > 50) {	// 50回以上上昇する場合(つまり引き抜いた時)はしばらく上げ下げを行う
+			if ( outCount % 20 == 10)weaponOut += 3;
+			if ( outCount % 20 == 0)weaponOut -= 2;
 			outCount--;
 		}
 		else if (outCount > 0) {	// 上に上昇させる
@@ -155,7 +169,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 			if (endRound == true)	// 引き抜いた後の処理
 			{
 				int randomNum = GetRand(31);
-				randomNum = 21;
+				//randomNum = 21;
 				// 武器のステータス決め　　名前　　　レベル		　X	  Y				右　左	   重さ
 				//  									　初期角度			大きさ		 終了位置
 				if(randomNum==0)weapon = { imgSword,	1,	0,	0,170,	10.0f,	3,	3,	7,	10 };
@@ -193,7 +207,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 				if(randomNum==25)weapon = { imgMightyHammer,1,0,	50,270,	10.0f,	1,	1,	4,	25};
 				if(randomNum==26)weapon = { imgChainsaw,	1,	0,	-0,250,	10.0f,	7,	7,	6,	20};
 				if(randomNum==27)weapon = { imgDarkSword,1,	0,	0,170,	10.0f,	5,	5,	7,	20};
-				if(randomNum==28)weapon = { imgDragonKeyring,1,0,0,170,	10.0f,	8,	8,	7,	15};
+				if(randomNum==28)weapon = { imgDragonKeyring,1,0,0,170,	10.0f,	8,	8,	6,	15};
 				if(randomNum==29)weapon = { imgLaserSaber,1,0,	0,170,	10.0f,	5,	5,	7,	10 };
 				if(randomNum==30)weapon = { imgTheLegendary,1,0,0,170,	10.0f,	10,	10,	7,	20 };
 				if(randomNum==31)weapon = { imgMagicStaff,1,0,	0,170,	10.0f,	2,	2,	7,	10 };
@@ -273,12 +287,19 @@ void InitGame(void)
 	imgMagicStaff = LoadGraphWithCheck("image/Nuku_MagicStaff.png");
 		
 
-
+	imgEne = LoadGraphWithCheck("image/Nuku_Ghost.png");
+	imgEneK = LoadGraphWithCheck("image/Nuku_KnightGhost.png");
+	imgEneKGreen = LoadGraphWithCheck("image/Nuku_KnightGhostGreen.png");
+	imgEneKYellow = LoadGraphWithCheck("image/Nuku_KnightGhostYellow.png");
+	imgEneKRed = LoadGraphWithCheck("image/Nuku_KnightGhostRed.png");
+	
 
 
 	imgTable = LoadGraphWithCheck("image/Nuku_Table.png");
 	imgGround = LoadGraphWithCheck("image/Nuku_+Ground.png");
 	imgSky = LoadGraphWithCheck("image/Nuku_Sky1.png");
+	imgLight = LoadGraphWithCheck("image/Nuku_Light.png");
+
 	imgField = LoadGraphWithCheck("image/Nuku_Battlefield.png");
 	imgFieldUI = LoadGraphWithCheck("image/Nuku_BattlefieldUI.png");
 	imgFieldCover = LoadGraphWithCheck("image/Nuku_BattlefieldCover.png");
