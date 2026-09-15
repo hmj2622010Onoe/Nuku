@@ -129,11 +129,11 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 
 		if (upKeyCheck == 1&&endRound==false)	// 上矢印キーが押された瞬間にまだ引き抜いていなければ
 		{
-			if (weaponOut > winningLine && -10 < weaponAngle && weaponAngle < 10&&endRound==false)	// 十分上に引っ張られているかつ真ん中にある状態の場合、引き抜く
+			if (weaponOut > winningLine && -5 < weaponAngle && weaponAngle < 5&&endRound==false)	// 十分上に引っ張られているかつ真ん中にある状態の場合、引き抜く
 			{
 				endRound = true;
 				weaponAngle = 0;	// 角度を真上に
-				outCount = 100;	// 100回分上昇させる
+				outCount = 110;	// 110回分上昇させる
 			}
 			if(weaponOut <= winningLine){	// まだ十分に引っ張られていない場合
 				// 回転範囲が高さの半分より広くなっていた場合　高さを上げる　　これによりさらに回転範囲を広げることができるようになる
@@ -151,8 +151,8 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 		}
 
 		if (outCount > 50) {	// 50回以上上昇する場合(つまり引き抜いた時)はしばらく上げ下げを行う
-			if ( outCount % 20 == 10)weaponOut += 3;
-			if ( outCount % 20 == 0)weaponOut -= 2;
+			if ( outCount % 30 == 0)weaponOut -= 2;
+			if (outCount % 30 < 6)weaponOut += 0.4f;
 			outCount--;
 		}
 		else if (outCount > 0) {	// 上に上昇させる
@@ -168,7 +168,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 			//leftSwordRange = (weapon.rangeL + weaponOut / 2) / 2.0f;
 			if (endRound == true)	// 引き抜いた後の処理
 			{
-				int randomNum = GetRand(31);
+				int randomNum = GetRand(17);
 				//randomNum = 21;
 				// 武器のステータス決め　　名前　　　レベル		　X	  Y				右　左	   重さ
 				//  									　初期角度			大きさ		 終了位置
