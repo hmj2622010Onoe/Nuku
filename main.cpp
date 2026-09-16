@@ -13,15 +13,14 @@ int mainX = (WIDTH / 10) * 7;	// 武器収集エリアにおいての中心X座標
 
 int attackX = (WIDTH / 10) * 2;	// 攻撃エリアにおいての中心X座標
 
-// 武器の種類(全部使うかは不明)
-int imgSword, imgScythe, imgSpear, imgAxe, imgKatana, imgMightyHammer,imgPickaxe,imgArrow,imgBayonet,imgChainsaw;
-int imgCutterBlade, imgCyberSword, imgDarkSword, imgDragonKeyring, imgFireSword, imgKey, imgKitchenKnife, imgLaserSaber, imgMagicHand, imgNaginata;
-int imgPencil, imgPixelSword, imgRapier, imgScissors, imgScrewdriver, imgShinai, imgShovel, imgSpatula, imgToySword, imgUmbrella;
-int imgCutterKnife, imgWindmill, imgTheLegendary,imgMagicStaff;
+int imgIconD, imgIconDb, imgIconC, imgIconCm, imgIconS;
 
 int imgGround,imgTable, imgSky,imgLight,imgField,imgFieldUI,imgFieldCover;
 
 int imgEne, imgEneK, imgEneKGreen, imgEneKYellow,imgEneKRed;
+
+int imgPixelSword2;
+
 
 float weaponAngle = 0;	// 武器の角度
 float weaponOut = 0;	// 武器の高さ（Y座標）
@@ -29,13 +28,38 @@ int power;
 float rightSwordRange = 1;	// 武器の回転範囲　広げることが出来る
 float leftSwordRange = 1;
 
+float attackOut;	// 攻撃する武器が上に動く
+
+int selBoxS=10;	// 選ぶ枠の大きさ
+int lottery = 3;	// 抽選される武器の数
+const int BoxLayWidth = 400;	// 箱を配置するスペースの大きさ
+int layBoxS = 0;	// 箱の数が多いほど大きさが小さくなる幅
+int nowSelBox = 0;	// 現在選ばれているBox
+int lotteryMax = 9;	// 抽選の最大数
+int box[1];
+
 int upKeyCheck;	// 上矢印キーが押された瞬間を判別する
+int leftKeyCheck;	
+int rightKeyCheck;	
+int downKeyCheck;	
 int outCount;	// 上に上がる回数を設定する　このカウントによって状態を切り替える
+
+int lotteryItem[6]={};
 
 int pixelStyle = 6;	// ピクセル剣のアニメーションの状態を表す
 int pixelOut = 0;	// ピクセル剣の高さ
 
+int enemyMove = 0;	// 敵が上下に動く
+int gamePhase = 1;	// 敵を倒すと進む
+int enemyHP = 200;	// 敵のHP
+int enemyMaxHP = 200;	// 敵の現フェーズのMAXHP
+int enemyStyle = imgEneK;	// 敵の見た目
+int bonusDamage = 0;	// 追加のダメージ
+
 bool endRound = false;	// 剣が引き抜かれたことを表す
+bool lotteryFlag = false;	// 抽選を行うか
+bool selectTime = false;	// 選択できる時間か
+bool attackTime = false;	// 攻撃できる時間か
 
 int winningLine;	// ここまでくると引き抜ける値
 int w, h;	// 画像のサイズ
@@ -49,8 +73,8 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	SetDrawScreen(DX_SCREEN_BACK);	// 描画面を裏画面にする
 
 	InitGame();
-	Weapon weapon = { imgSword,	1,	0,	0,170,	10.0f,	3,	3,	7,	10 };
-
+	Weapon weapon = weaponData[0];
+	
 	while(1)
 	{
 		ClearDrawScreen();
@@ -62,7 +86,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 		//Weapon weapon;
 		//Weapon weapon = {imgSword,1,0,0,15,15.0f,3,3};
 		// 武器を描く
-		if (weapon.img == imgPixelSword) {	// ピクセル剣の場合用のアニメーション
+		if (*weapon.img == imgPixelSword) {	// ピクセル剣の場合用のアニメーション
 			if (weaponAngle<-23)pixelStyle = 0;
 			if (-24 < weaponAngle && weaponAngle < -20)pixelStyle = 1;
 			if (-19 < weaponAngle && weaponAngle < -15)pixelStyle = 2;
@@ -76,15 +100,11 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 			if(24<weaponAngle)pixelStyle = 10;
 
 			pixelOut = static_cast<int>(std::round(weaponOut / 2));	// 概ねドット状に上下させるため整数に変換
-			//if (weaponOut - 0.5 > winningLine)	// ドット状に下がるための専用の処理
-			//{
-			//	if(outCount%20<10)weaponOut -= 0.4;	
-			//}
 			// ドット専用の描画用　角度を使わない
-			DrawImageAnimation(weapon.img, mainX + weapon.xPlus, (HEIGHT * 1.4f + pixelOut*2) - weapon.yPlus, weapon.size, pixelStyle);
+			DrawImageAnimation(*weapon.img, mainX + weapon.xPlus, (HEIGHT * 1.4f + pixelOut*2) - weapon.yPlus, weapon.size, pixelStyle);
 		}
 		// 通常時の描画用
-		else DrawImageRotateEnlarge(weapon.img, mainX + weapon.xPlus, (HEIGHT * 1.4f + weaponOut)-weapon.yPlus, weapon.size, weaponAngle+weapon.iniAngle);
+		else DrawImageRotateEnlarge(*weapon.img, mainX + weapon.xPlus, (HEIGHT * 1.4f + weaponOut)-weapon.yPlus, weapon.size, weaponAngle+weapon.iniAngle);
 		DrawImageEnlarge(imgGround, mainX, HEIGHT / 2.1f, 40, 30);	// 地面を描く　武器より前面
 
 		//SetDrawBlendMode(DX_BLENDMODE_ALPHA, ((weaponOut / winningLine) * 100));	// ブレンドモード設定
@@ -94,9 +114,16 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 		DrawImageEnlarge(imgField, mainX-100, HEIGHT / 2, 29, 40);
 		DrawImageEnlarge(imgFieldCover, mainX-100, HEIGHT / 2, 29, 30);
 		DrawImageEnlarge(imgFieldUI, mainX-100, HEIGHT / 2, 29, 30);
-		DrawImageEnlarge(imgEneK, attackX+22, HEIGHT / 8, 8, 8);
-		
-		GetGraphSize(weapon.img, &w, &h);	// 現在の武器の大きさを取得
+		DrawImageEnlarge(imgEneK, attackX+22, HEIGHT / 8+enemyMove, 6+(gamePhase*2), 6 + (gamePhase * 2));
+		float enePercent;
+		enePercent = static_cast<float>(enemyHP)/ static_cast<int>(enemyMaxHP);
+		DrawBoxAA(attackX -150+22,HEIGHT/8-60, attackX -150+22+(enePercent * 300),HEIGHT / 8 - 30,GetColor(255-(enePercent * 255),(enePercent*255),0),true,1);
+		DrawBox(attackX -150+22,HEIGHT/8-60, attackX +172,HEIGHT / 8 - 30,GetColor(0,0,0),false,5);
+		SetFontSize(24);
+		DrawFormatString(attackX - 150 + 26, HEIGHT / 8-56 , GetColor(255,255,255), "%d",enemyHP);
+		SetFontSize(56);
+		DrawFormatString(attackX - 150 + 26, HEIGHT -100 , GetColor(255,255,255), "+%d",bonusDamage);
+		GetGraphSize(*weapon.img, &w, &h);	// 現在の武器の大きさを取得
 		winningLine = (h / 10) * weapon.phase;
 		//DrawImageEnlarge(imgTable, WIDTH / 2, HEIGHT / 1.3, 10, 10);
 		
@@ -134,6 +161,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 				endRound = true;
 				weaponAngle = 0;	// 角度を真上に
 				outCount = 110;	// 110回分上昇させる
+	
 			}
 			if(weaponOut <= winningLine){	// まだ十分に引っ張られていない場合
 				// 回転範囲が高さの半分より広くなっていた場合　高さを上げる　　これによりさらに回転範囲を広げることができるようになる
@@ -144,7 +172,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 					}
 					else if (weapon.rangeL + weaponOut / 2 - leftSwordRange < 0.5 || weapon.rangeR + weaponOut / 2 - rightSwordRange < 0.5) {
 						weaponOut += (1 - (leftSwordRange - (weapon.rangeL + weaponOut / 2))) / 10 + (1 - (rightSwordRange - (weapon.rangeR + weaponOut / 2))) / weapon.weight;
-						outCount = 5;	// 左右どちらか広がっていれば5回分上昇
+						outCount = 2;	// 左右どちらか広がっていれば2回分上昇
 					}
 				}
 			}
@@ -166,69 +194,112 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 			outCount = 0;
 			//rightSwordRange = (weapon.rangeR + weaponOut / 2) / 2.0f;
 			//leftSwordRange = (weapon.rangeL + weaponOut / 2) / 2.0f;
-			if (endRound == true)	// 引き抜いた後の処理
+			if (endRound == true&&selectTime==false&&attackTime==false)	// 引き抜いた後の処理
 			{
-				int randomNum = GetRand(17);
+				box[lotteryMax];
+				for (int i = 0; i < lotteryMax; i++)
+				{
+					box[i] = 0;
+				}
+
+				lottery = weapon.nextLottery;
+				nowSelBox = lottery / 2;
+				for (int i = 0; i < lottery; i++) {
+					int select;
+					do { select = rand() % (lotteryMax); } while (box[select] != 0);
+					box[select] = 1;
+					lotteryItem[i] = GetRand(lotteryMax);
+				}
+				//DrawBox(mainX - selBoxS + lottery * layBoxS - BoxLayWidth / 2 + BoxLayWidth / (lottery + 1) * (nowSelBox + 1) - 2, HEIGHT / 1.2f - selBoxS + lottery * layBoxS - 2, mainX + selBoxS - lottery * layBoxS - BoxLayWidth / 2 + BoxLayWidth / (lottery + 1) * (nowSelBox + 1) + 2, HEIGHT / 1.2f + selBoxS - lottery * layBoxS + 2, 0xffffff, false, 5);
+				//int randomNum = GetRand(17);
 				//randomNum = 21;
-				// 武器のステータス決め　　名前　　　レベル		　X	  Y				右　左	   重さ
-				//  									　初期角度			大きさ		 終了位置
-				if(randomNum==0)weapon = { imgSword,	1,	0,	0,170,	10.0f,	3,	3,	7,	10 };
-				if(randomNum==1)weapon = { imgShinai,	1,	0,	0,170,	10.0f,	3,	3,	7,	9 };
-				if(randomNum==2)weapon = { imgSpear,	1,	0,	0,170,	10.0f,	3,	3,	7,	8};
-				if(randomNum==3)weapon = { imgAxe,		1,	0,	-50,230,	10.0f,	2,	2,	6,	13};
-				if(randomNum==4)weapon = { imgScythe,	1,	0,	-50,170,	10.0f,	6,	2,	6,	10};
-				if(randomNum==5)weapon = { imgPickaxe,	1,	0,	0,170,	10.0f,	5,	5,	7,	10};
-				if(randomNum==6)weapon = { imgArrow,	1,	0,	0,170,	10.0f,	2,	2,	7,	5};
-				if(randomNum==7)weapon = { imgKitchenKnife,1,0,0,170,	10.0f,	4,	4,	7,	9};
-				if(randomNum==8)weapon = { imgShovel,	1,	0,	0,170,	10.0f,	4,	4,	7,	10 };
-				if(randomNum==9)weapon = { imgCutterKnife,1,0,	0,170,	10.0f,	7,	7,	7,	8 };
-
-				if(randomNum==10)weapon = { imgCutterBlade,1,0,	0,170,	10.0f,	7,	7,	7,	15};
-				if(randomNum==11)weapon = { imgBayonet,	1,	0,	0,170,	10.0f,	3,	3,	7,	12};
-				if(randomNum==12)weapon = { imgMagicHand,1,	0,	0,170,	10.0f,	2,	2,	7,	8 };
-				if(randomNum==13)weapon = { imgFireSword,1,	0,	0,170,	10.0f,	5,	5,	7,	15};
-				if(randomNum==14)weapon = { imgKey,		1,	0,	0,170,	10.0f,	3,	3,	7,	15};
-				if(randomNum==15)weapon = { imgPencil,	1,	0,	0,170,	10.0f,	3,	3,	7,	7 };
-				if(randomNum==16)weapon = { imgScissors,1,	0,	0,170,	10.0f,	5,	5,	7,	20 };
-				if(randomNum==17)weapon = { imgRapier,	1,	0,	0,170,	10.0f,	4,	4,	7,	8 };
-				
-
-
-
-				if(randomNum==18)weapon = { imgKatana,	1,	0,	0,170,	10.0f,	5,	3,	7,	9};
-				if(randomNum==19)weapon = { imgWindmill,1,	0,	0,170,	10.0f,	1,	1,	7,	8 };
-				if(randomNum==20)weapon = { imgCyberSword,1,0,	0,170,	10.0f,	5,	5,	7,	9};
-				if(randomNum==21)weapon = { imgPixelSword,1,0,	50,150,	8.0f,	7,	7,	7,	15 };
-				if(randomNum==22)weapon = { imgNaginata,1,	0,	0,170,	10.0f,	4,	4,	7,	15 };
-				if(randomNum==23)weapon = { imgSpatula,	1,	0,	0,170,	13.0f,	2,	2,	6,	15 };
-				if(randomNum==24)weapon = { imgUmbrella,1,	0,	0,170,	10.0f,	2,	2,	7,	10 };
-
-
-				if(randomNum==25)weapon = { imgMightyHammer,1,0,	50,270,	10.0f,	1,	1,	4,	25};
-				if(randomNum==26)weapon = { imgChainsaw,	1,	0,	-0,250,	10.0f,	7,	7,	6,	20};
-				if(randomNum==27)weapon = { imgDarkSword,1,	0,	0,170,	10.0f,	5,	5,	7,	20};
-				if(randomNum==28)weapon = { imgDragonKeyring,1,0,0,170,	10.0f,	8,	8,	6,	15};
-				if(randomNum==29)weapon = { imgLaserSaber,1,0,	0,170,	10.0f,	5,	5,	7,	10 };
-				if(randomNum==30)weapon = { imgTheLegendary,1,0,0,170,	10.0f,	10,	10,	7,	20 };
-				if(randomNum==31)weapon = { imgMagicStaff,1,0,	0,170,	10.0f,	2,	2,	7,	10 };
-				 
-
-				weaponOut = 0;	
-				weaponAngle = 0;	
-				rightSwordRange = 1;
-				leftSwordRange = 1;
-				endRound = false;
+				attackTime = true;
+				attackOut = HEIGHT;	
+				//selectTime = true;
+				//endRound = false;
 			}
 		}
 
-		// 上矢印キーを話した瞬間に少し武器の高さを下げる
+		if (attackTime == true) {// 攻撃フェーズ
+			if (*weapon.img == imgPixelSword) {
+				DrawImageRotateEnlarge(imgPixelSword2, attackX, 0+ attackOut, 5.0f, 180);
+			}
+			else DrawImageRotateEnlarge(*weapon.img,attackX+30,0+attackOut, 5.0f,180);
+			attackOut -=20.0f;
+				weaponOut = 0;
+				weaponAngle = 0;
+				rightSwordRange = 1;
+				leftSwordRange = 1;
+			if (attackOut < HEIGHT / 8) {
+
+
+				if (weapon.cProbability > GetRand(100)) {
+					int cDamage;
+					cDamage = weapon.cMultiplier * weapon.damage;
+					enemyHP -= cDamage + bonusDamage;
+				}
+				else enemyHP -= weapon.damage+bonusDamage;
+
+				bonusDamage += weapon.pPower;
+				selectTime = true;
+				attackTime = false;
+				if (enemyHP <= 0) {
+					gamePhase++;
+					if (gamePhase > 4)gamePhase = 4;
+					if (gamePhase == 2) {
+						enemyMaxHP = 500;
+						lotteryMax = 17;
+						enemyStyle = imgEneKGreen;
+					}
+					if (gamePhase == 3) {
+						enemyMaxHP = 1000;
+						lotteryMax = 24;
+						enemyStyle = imgEneKYellow;
+					}
+					if (gamePhase == 4) {
+						enemyMaxHP = 3000;
+						lotteryMax = 31;
+						enemyStyle = imgEneKRed;
+					}
+					enemyHP = enemyMaxHP;
+				}
+			}
+		}
+		
+		if (selectTime == true) {	// 選ぶフェーズ
+			for (int i = 0; i < lottery; i++) {
+				DrawBox(mainX - selBoxS + lottery * layBoxS - BoxLayWidth / 2 + BoxLayWidth / (lottery + 1) * (i + 1), HEIGHT / 1.2f - selBoxS + lottery * layBoxS, mainX + selBoxS - lottery * layBoxS - BoxLayWidth / 2 + BoxLayWidth / (lottery + 1) * (i + 1), HEIGHT / 1.2f + selBoxS - lottery * layBoxS, 0x404040, true, 1);
+				DrawBox(mainX - selBoxS + lottery * layBoxS - BoxLayWidth / 2 + BoxLayWidth / (lottery + 1) * (i + 1), HEIGHT / 1.2f - selBoxS + lottery * layBoxS, mainX + selBoxS - lottery * layBoxS - BoxLayWidth / 2 + BoxLayWidth / (lottery + 1) * (i + 1), HEIGHT / 1.2f + selBoxS - lottery * layBoxS, 0x000000, false, 5);
+				//DrawImageEnlarge(*weaponData[lotteryItem[i]].img,mainX + lottery * layBoxS - BoxLayWidth / 2 + BoxLayWidth / (lottery + 1) * (i + 1),HEIGHT/4, (15 - lottery)/6, (15 - lottery)/6);
+			}
+			DrawBox(mainX - selBoxS + lottery * layBoxS - BoxLayWidth / 2 + BoxLayWidth / (lottery + 1) * (nowSelBox + 1) - 2, HEIGHT / 1.2f - selBoxS + lottery * layBoxS - 2, mainX + selBoxS - lottery * layBoxS - BoxLayWidth / 2 + BoxLayWidth / (lottery + 1) * (nowSelBox + 1) + 2, HEIGHT / 1.2f + selBoxS - lottery * layBoxS + 2, 0xffffff, false, 5);
+			DrawBox(mainX - 200, HEIGHT / 15, mainX + 200, HEIGHT / 2.2f, 0xeeeeee, true, 1);
+			DrawImageEnlarge(imgIconD, mainX - 150, HEIGHT / 15+50, 5, 5);
+			DrawImageEnlarge(imgIconDb, mainX - 150, HEIGHT / 15+140, 5, 5);
+			DrawImageEnlarge(imgIconS, mainX - 150, HEIGHT / 15+230, 5, 5);
+			DrawImageEnlarge(imgIconC, mainX+30, HEIGHT / 15 + 50, 5, 5);
+			DrawImageEnlarge(imgIconCm, mainX+30, HEIGHT / 15 + 140, 5, 5);
+			SetFontSize(50);
+			int cDamage;
+			cDamage = weapon.cMultiplier * weapon.damage;
+			DrawFormatString(mainX - 100, HEIGHT / 15 + 25,GetColor(0,0,0),"%d",weapon.damage);
+			DrawFormatString(mainX - 100, HEIGHT / 15 + 115,GetColor(0,0,0),"%d",weapon.pPower);
+			DrawFormatString(mainX - 100, HEIGHT / 15 + 205,GetColor(0,0,0),"%d",weapon.nextLottery);
+			DrawFormatString(mainX +80, HEIGHT / 15 + 25,GetColor(0,0,0),"%d",cDamage);
+			DrawFormatString(mainX +80, HEIGHT / 15 + 115,GetColor(0,0,0),"%d％", weapon.cProbability);
+			weapon = weaponData[lotteryItem[nowSelBox]];
+			if (leftKeyCheck == 1) { nowSelBox--;  }	
+			if (rightKeyCheck == 1) { nowSelBox++;  }
+			if (nowSelBox > lottery-1)nowSelBox = lottery-1;
+			if (nowSelBox < 0)nowSelBox = 0;
+			if (upKeyCheck == 1) {
+				endRound = false;
+				selectTime = false;
+			}
+		}
+
+		// 上矢印キーを離した瞬間に少し武器の高さを下げる
 		if (upKeyCheck == -1)weaponOut -= (1 - (leftSwordRange - (weapon.rangeL + weaponOut / 2))) / 10 + (1 - (rightSwordRange - (weapon.rangeR + weaponOut / 2))) / weapon.weight;
-
-		/*if (weaponOut > 40) {
-			outCount = 50;
-			endRound = true;
-		}*/
-
 
 		if (CheckHitKey(KEY_INPUT_UP) == 0) {	// 押した瞬間離した瞬間を判定する
 			if (upKeyCheck > 0) upKeyCheck = -1;
@@ -236,8 +307,28 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 		}
 		else upKeyCheck++;
 
-		//if (CheckHitKey(KEY_INPUT_DOWN) == 1)weaponOut-=0.1;
+		if (CheckHitKey(KEY_INPUT_LEFT) == 0) {	// 押した瞬間離した瞬間を判定する
+			if (leftKeyCheck > 0) leftKeyCheck = -1;
+			else leftKeyCheck = 0;
+		}
+		else leftKeyCheck++;
+		if (CheckHitKey(KEY_INPUT_RIGHT) == 0) {	// 押した瞬間離した瞬間を判定する
+			if (rightKeyCheck > 0) rightKeyCheck = -1;
+			else rightKeyCheck = 0;
+		}
+		else rightKeyCheck++;
+		if (CheckHitKey(KEY_INPUT_DOWN) == 0) {	// 押した瞬間離した瞬間を判定する
+			if (downKeyCheck > 0) downKeyCheck = -1;
+			else downKeyCheck = 0;
+		}
+		else downKeyCheck++;
 
+		if (CheckHitKey(KEY_INPUT_D) == 1 && CheckHitKey(KEY_INPUT_R) == 1 && CheckHitKey(KEY_INPUT_G) == 1)
+		{
+			weaponOut = winningLine;
+			weaponAngle = 0;
+		}
+		
 		ScreenFlip();	// 裏画面の内容を表画面に反映させる
 		//WaitKey();
 		WaitTimer(1000 / FPS);	// 一定時間待つ
@@ -273,13 +364,12 @@ void InitGame(void)
 	imgNaginata = LoadGraphWithCheck("image/Nuku_+Naginata.png"); 
 	imgPencil = LoadGraphWithCheck("image/Nuku_+Pencil.png");
 	imgPixelSword = LoadGraphWithCheck("image/Nuku_Anition_PixelSword.png");
+	imgPixelSword2 = LoadGraphWithCheck("image/Nuku_PixelSword.png");
 	imgRapier = LoadGraphWithCheck("image/Nuku_+Rapier.png");
 	imgScissors = LoadGraphWithCheck("image/Nuku_Scissors.png");
-	//imgScrewdriver = LoadGraphWithCheck("image/Nuku_Screwdriver.png");
 	imgShinai = LoadGraphWithCheck("image/Nuku_+Shinai.png");
 	imgShovel = LoadGraphWithCheck("image/Nuku_+Shovel.png");
 	imgSpatula = LoadGraphWithCheck("image/Nuku_+Spatula.png");
-	//imgToySword = LoadGraphWithCheck("image/Nuku_ToySword.png");
 	imgUmbrella = LoadGraphWithCheck("image/Nuku_+Umbrella.png");
 	imgCutterKnife = LoadGraphWithCheck("image/Nuku_CutterKnife.png");
 	imgWindmill = LoadGraphWithCheck("image/Nuku_Windmill.png");
@@ -293,6 +383,11 @@ void InitGame(void)
 	imgEneKYellow = LoadGraphWithCheck("image/Nuku_KnightGhostYellow.png");
 	imgEneKRed = LoadGraphWithCheck("image/Nuku_KnightGhostRed.png");
 	
+	imgIconD = LoadGraphWithCheck("image/Nuku_Icon damage.png");
+	imgIconDb = LoadGraphWithCheck("image/Nuku_Icon upDamage.png");
+	imgIconC = LoadGraphWithCheck("image/Nuku_Icon critical.png");
+	imgIconCm = LoadGraphWithCheck("image/Nuku_Icon criticalMuluti.png");
+	imgIconS = LoadGraphWithCheck("image/Nuku_IconSelect.png");
 
 
 	imgTable = LoadGraphWithCheck("image/Nuku_Table.png");
@@ -318,7 +413,7 @@ void DrawImageRotateEnlarge(int img, int x, float y, double ExtRate,float angle)
 {
 	float w, h;
 	GetGraphSizeF(img, &w, &h);
-	DrawRotaGraph2F(x - (w / 2), y, w/2 , (h/2+weaponOut)+20, ExtRate, (angle * DX_PI_F / 180.0f), img, true);
+	DrawRotaGraph2F(x - (w / 2.0f), y, w/2.0f , (h/2.0f+weaponOut)+20, ExtRate, (angle * DX_PI_F / 180.0f), img, true);
 }
 
 void DrawImageAnimation(int img, int x, float y, double ExtRate, int style)
@@ -326,7 +421,7 @@ void DrawImageAnimation(int img, int x, float y, double ExtRate, int style)
 	float w = 100;
 	float h = 50;
 	GetGraphSizeF(img, &w, &h);
-	DrawRectRotaGraph2F(x-(100/2), y+(50/2), style * 100, 0, 100, 50, 100 / 2, (50 + pixelOut*2), ExtRate, 0.0, img, true);
+	DrawRectRotaGraph2F(x-(100/2.0f), y+(50/2.0f), style * 100, 0, 100, 50, 100 / 2.0f, (50 + pixelOut*2.0f), ExtRate, 0.0, img, true);
 	//DrawRotaGraph2F(x - (w / 3), y + (h / 2), style*100 , (h / 2 + weaponOut) + 20, ExtRate, 0, img, true);
 }
 
