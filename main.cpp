@@ -114,7 +114,8 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 		DrawImageEnlarge(imgField, mainX-100, HEIGHT / 2, 29, 40);
 		DrawImageEnlarge(imgFieldCover, mainX-100, HEIGHT / 2, 29, 30);
 		DrawImageEnlarge(imgFieldUI, mainX-100, HEIGHT / 2, 29, 30);
-		DrawImageEnlarge(imgEneK, attackX+22, HEIGHT / 8+enemyMove, 6+(gamePhase*2), 6 + (gamePhase * 2));
+		if (gamePhase == 1)enemyStyle = imgEneK;
+		DrawImageEnlarge(enemyStyle, attackX+22, HEIGHT / 8+enemyMove, 6+(gamePhase*2), 6 + (gamePhase * 2));
 		float enePercent;
 		enePercent = static_cast<float>(enemyHP)/ static_cast<int>(enemyMaxHP);
 		DrawBoxAA(attackX -150+22,HEIGHT/8-60, attackX -150+22+(enePercent * 300),HEIGHT / 8 - 30,GetColor(255-(enePercent * 255),(enePercent*255),0),true,1);
@@ -227,10 +228,10 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 			else DrawImageRotateEnlarge(*weapon.img,attackX+30,0+attackOut, 5.0f,180);
 			attackOut -=20.0f;
 				weaponOut = 0;
+			if (attackOut < HEIGHT / 8) {
 				weaponAngle = 0;
 				rightSwordRange = 1;
 				leftSwordRange = 1;
-			if (attackOut < HEIGHT / 8) {
 
 
 				if (weapon.cProbability > GetRand(100)) {
