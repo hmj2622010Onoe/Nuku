@@ -36,7 +36,7 @@ const int BoxLayWidth = 400;	// 箱を配置するスペースの大きさ
 int layBoxS = 0;	// 箱の数が多いほど大きさが小さくなる幅
 int nowSelBox = 0;	// 現在選ばれているBox
 int lotteryMax = 9;	// 抽選の最大数
-int box[1];
+int box[32];
 
 int upKeyCheck;	// 上矢印キーが押された瞬間を判別する
 int leftKeyCheck;	
@@ -86,7 +86,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 		//Weapon weapon;
 		//Weapon weapon = {imgSword,1,0,0,15,15.0f,3,3};
 		// 武器を描く
-		if (*weapon.img == imgPixelSword) {	// ピクセル剣の場合用のアニメーション
+		if (*weapon.img == imgPixelSword&&attackTime==false) {	// ピクセル剣の場合用のアニメーション
 			if (weaponAngle<-23)pixelStyle = 0;
 			if (-24 < weaponAngle && weaponAngle < -20)pixelStyle = 1;
 			if (-19 < weaponAngle && weaponAngle < -15)pixelStyle = 2;
@@ -104,7 +104,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 			DrawImageAnimation(*weapon.img, mainX + weapon.xPlus, (HEIGHT * 1.4f + pixelOut*2) - weapon.yPlus, weapon.size, pixelStyle);
 		}
 		// 通常時の描画用
-		else DrawImageRotateEnlarge(*weapon.img, mainX + weapon.xPlus, (HEIGHT * 1.4f + weaponOut)-weapon.yPlus, weapon.size, weaponAngle+weapon.iniAngle);
+		else if(attackTime == false)DrawImageRotateEnlarge(*weapon.img, mainX + weapon.xPlus, (HEIGHT * 1.4f + weaponOut)-weapon.yPlus, weapon.size, weaponAngle+weapon.iniAngle);
 		DrawImageEnlarge(imgGround, mainX, HEIGHT / 2.1f, 40, 30);	// 地面を描く　武器より前面
 
 		//SetDrawBlendMode(DX_BLENDMODE_ALPHA, ((weaponOut / winningLine) * 100));	// ブレンドモード設定
@@ -197,7 +197,6 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 			//leftSwordRange = (weapon.rangeL + weaponOut / 2) / 2.0f;
 			if (endRound == true&&selectTime==false&&attackTime==false)	// 引き抜いた後の処理
 			{
-				box[lotteryMax];
 				for (int i = 0; i < lotteryMax; i++)
 				{
 					box[i] = 0;
@@ -248,17 +247,17 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 					gamePhase++;
 					if (gamePhase > 4)gamePhase = 4;
 					if (gamePhase == 2) {
-						enemyMaxHP = 500;
+						enemyMaxHP = 750;
 						lotteryMax = 17;
 						enemyStyle = imgEneKGreen;
 					}
 					if (gamePhase == 3) {
-						enemyMaxHP = 1000;
+						enemyMaxHP = 3000;
 						lotteryMax = 24;
 						enemyStyle = imgEneKYellow;
 					}
 					if (gamePhase == 4) {
-						enemyMaxHP = 3000;
+						enemyMaxHP = 10000;
 						lotteryMax = 31;
 						enemyStyle = imgEneKRed;
 					}
